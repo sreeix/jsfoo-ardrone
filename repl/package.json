@@ -1,0 +1,18 @@
+{
+  "name": "ardrone-commander",
+  "version": "0.0.0",
+  "description": "Commands an ardrone over a connection",
+  "main": "index.js",
+  "scripts": {
+    "start": "node repl.js"
+  },"dependencies": {
+    "ar-drone": "*"
+  },
+  "keywords": [
+    "ardrone",
+    "node",
+    "command"
+  ],
+  "author": "Sreekanth",
+  "license": "BSD-2-Clause"
+}
