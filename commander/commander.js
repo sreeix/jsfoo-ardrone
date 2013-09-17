@@ -21,16 +21,15 @@ var commander = {
     drone.takeoff();
     setTimeout(done, 5000);
   },
-  exec: function (data) {
-    data = data.toString().trim().toLowerCase();
+  exec: function (command) {
+    data = command.toString().trim().toLowerCase();
     console.log("processing ", data);
     if(data === 'help'){
       console.log("sending", _.keys(commandDefaults));
       return _.keys(commandDefaults).join('\n')+ '\n';
     }
-    var fn = drone[data];
+    var fn = drone[command.toString().trim()] || drone[data];
     if(fn){
-      
       var resData = fn.apply(drone, commandDefaults[data]) || "No Reply";
       console.log(resData.toString()+'\n');
       return resData.toString()+'\n';
