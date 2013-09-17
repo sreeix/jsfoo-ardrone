@@ -13,8 +13,8 @@ commander.init(function () {
 
       // Add a 'data' event handler to this instance of socket
       sock.on('data', function(data) {
-          sock.write('You said "' + data + '"');
-          commander.exec(data);
+          var rs = commander.exec(data);
+          sock.write(rs);
       });
       sock.on('close', function(data) {
           console.log('CLOSED: ' + sock.remoteAddress +' '+ sock.remotePort);
