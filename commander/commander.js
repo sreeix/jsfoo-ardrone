@@ -1,3 +1,4 @@
+var _ = require('underscore');
 var drone  = require('ar-drone').createClient();
 var commandDefaults = {
   'clockwise': [0.1],
@@ -9,7 +10,9 @@ var commandDefaults = {
   'back': [0.1],
   'left': [0.1],
   'right': [0.1],
+  'disableEmergency': [],
   'animate': ['flipLeft', 1500],
+  'animateLeds': ['animateLeds', 10, 10],
   'land':[]
 }
 
@@ -19,15 +22,21 @@ var commander = {
     setTimeout(done, 5000);
   },
   exec: function (data) {
-    data = data.toLowerCase();
-    if(data && data === 'help'){
-      return _.keys(commandDefaults);
+    data = data.toString().trim().toLowerCase();
+    console.log("processing ", data);
+    if(data === 'help'){
+      console.log("sending", _.keys(commandDefaults));
+      return _.keys(commandDefaults).join('\n')+ '\n';
     }
     var fn = drone[data];
     if(fn){
-      return fn.apply(drone, commandDefaults[data]) || "No Reply";
+      
+      var resData = fn.apply(drone, commandDefaults[data]) || "No Reply";
+      console.log(resData.toString()+'\n');
+      return resData.toString()+'\n';
     }
-    return "Bad Command"
+    console.log('bad command');
+    return "Bad Command\n"
   }
 };
 
