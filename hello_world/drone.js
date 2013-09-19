@@ -14,15 +14,19 @@ var droneMock = {
 // droneClient = droneMock;
 
 var stopAndCallback = function (cb) {
-  return function (argument) {
+  return function () {
     droneClient.stop();
     console.log("stopped now calling the done function");
-    setTimeout(cb, 1000);
+    setTimeout(cb, 300);
   }
 };
 
+var setTimeoutWithPeriodicUpdate = function (frequency, howLong, callback) {
+  
+}
 var drone = {
-  x : 0, y : 0,
+  x : 0, y : 0, z : 0,
+  currentAction : null,
   init: function init (cb) {
     droneClient.ftrim();
     droneClient.config('general:navdata_data_demo', false);
@@ -36,10 +40,11 @@ var drone = {
   on: function(event, fn){
     var throttled = _.throttle(fn);
     droneClient.on(event, function (data) {
+      var dataWithPosition;
       drone.currentData = data;
-      console.log("Battery: ",data.demo.batteryPercentage);
       if(data.demo && (data.demo.controlState === 'CTRL_HOVERING' ||data.demo.controlState === 'CTRL_FLYING')){
-        return throttled(data, 10);
+        dataWithPosition = _.extend({}, data, {x: drone.x, y: drone.y});
+        return throttled(dataWithPosition, 10);
       }
     });
   },
@@ -55,12 +60,8 @@ var drone = {
     return function turn(cb) {
       console.log("Turning at.", angle, "rotating for ", angle * 10, 'ms');
       var startData = drone.currentData.demo.clockwiseDegrees;
-      console.log("Current Angle is ", startData);
-      droneClient.clockwise(0.20);
-      setTimeout(stopAndCallback(function() {
-        console.log(drone.currentData.demo.clockwiseDegrees, "change", drone.currentData.demo.clockwiseDegrees - startData);
-        cb();
-      }), angle * 10);
+      droneClient.clockwise(0.60);
+      setTimeout(stopAndCallback(cb), angle * 10);
       return drone;
     }
   },
@@ -68,17 +69,69 @@ var drone = {
     return drone;
   },
   reset: function reset (cb) {
-    cb();
+    stopAndCallback(cb)();
     return drone;
   },
   shutdown: function shutdown (cb) {
     droneClient.land();
     setTimeout(cb, 100);
+  },
+  moveRight: function (units) {
+    return function right (cb) {
+      console.log("Moving right at .1 for ", units * 500, 'ms');
+      droneClient.right(.1);
+      var intervalId = setInterval(function () {
+        drone.x += 1
+      }, 50);
+      setTimeout(stopAndCallback(function () {
+        clearInterval(intervalId);
+        cb();
+      }), units*500);
+    };
+  },
+  moveLeft: function (units) {
+    return function left (cb) {
+      droneClient.left(.1);
+      console.log("Moving left at .1 for ", units*500, 'ms');
+      var intervalId = setInterval(function () {
+        drone.x -= 1
+      }, 50);
+      setTimeout(stopAndCallback(function () {
+        clearInterval(intervalId);
+        cb();
+      }), units*500);
+    };
+  },
+  up: function (units) {
+    return function up (cb) {
+      droneClient.up(.1);
+      console.log("Moving up at .1 for ", units * 200, 'ms');
+      setTimeout(stopAndCallback(cb), units * 200);
+    };
+  },
+  down: function (units) {
+    return function down (cb) {
+      droneClient.down(.1);
+      console.log("Moving down at .1 for ", units*200, 'ms');
+      setTimeout(stopAndCallback(cb), units * 200);
+    };
   }
 };
 
-drone.right = _.partial(drone.turn, 90)();
-drone.left = _.partial(drone.turn, 270)();
-drone.back = _.partial(drone.turn, 180)();
+drone.right = function (val) {
+  if(!val ){
+    val = 90;
+  }
+  return drone.turn(val);
+};
+drone.left = function (val) {
+  if(!val){
+    val = 90;
+  }
+  val = val + 180;
+  return drone.turn(val);
+};
 
+drone.back = _.partial(drone.turn, 180)();
+drone.home = drone.reset;
 module.exports = drone;
